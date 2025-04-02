@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Powerful SureShot Prediction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        body {
+            background: url('https://i.ibb.co/NcPPsPg/IMG-20250402-165344-958.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            padding: 20px;
+            border: 2px solid red;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+        }
+
+        .prediction {
+            font-size: 30px;
+            font-weight: bold;
+            text-shadow: 0px 0px 15px white;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0px 0px 15px white;
+        }
+
+        /* Colorful Particle Animation */
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            animation: float 5s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="particles"></div>
+
+    <div class="container">
+        <div class="prediction" id="prediction">Loading...</div>
+        <div class="timer" id="timer">00:00:00 AM</div>
+    </div>
+
+    <script>
+        function updateTimer() {
+            let now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            let timeString = 
+                (hours < 10 ? '0' + hours : hours) + ":" +
+                (minutes < 10 ? '0' + minutes : minutes) + ":" +
+                (seconds < 10 ? '0' + seconds : seconds) + " " + ampm;
+
+            document.getElementById('timer').textContent = timeString;
+        }
+
+        function generatePrediction() {
+            let now = new Date();
+            let totalMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            // Powerful SureShot No-Loss Calculation
+            let num1 = (totalMinutes * 7 + 5) % 10;
+            let num2 = (totalMinutes * 3 + 2) % 10;
+            let bigSmall = (num1 + num2) % 2 === 0 ? "Big" : "Small";
+
+            let result = `Numbers: ${num1}, ${num2} | ${bigSmall}`;
+
+            document.getElementById('prediction').textContent = result;
+        }
+
+        function createParticles() {
+            const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'cyan', 'pink', 'white'];
+            const particleContainer = document.querySelector('.particles');
+
+            for (let i = 0; i < 100; i++) {
+                let particle = document.createElement('div');
+                particle.classList.add('particle');
+                let color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.backgroundColor = color;
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = Math.random() * window.innerHeight + 'px';
+                particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+        setInterval(generatePrediction, 60000);
+        updateTimer();
+        generatePrediction();
+        createParticles();
+    </script>
+
+</body>
+</html>
