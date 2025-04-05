@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VP AI Server</title>
+    <style>
+        /* Import Google Font */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+        /* Global Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 90vh;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: red;
+            text-shadow: 0px 0px 10px red;
+            margin-bottom: 20px;
+        }
+
+        .server-status, .game-period, .result-container {
+            border: 2px solid red;
+            padding: 15px;
+            width: 80%;
+            max-width: 400px;
+            margin: 10px 0;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            text-shadow: 0px 0px 5px white;
+        }
+
+        .get-result-btn {
+            background: black;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid red;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+            margin: 5px;
+            transition: 0.3s;
+        }
+
+        .get-result-btn:hover {
+            background: red;
+            color: black;
+        }
+
+        .result-container {
+            display: none;
+            font-size: 20px;
+        }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 12px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            font-size: 16px;
+            box-shadow: 0px 0px 10px red;
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Telegram Button */
+        .telegram-btn {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0088cc;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .telegram-btn:hover {
+            background: #005f8c;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="title">VP PVT SERVER</h1>
+
+        <div class="server-status">
+            <p>SERVER SELECT ⇆ <span id="selected-server">SERVER 1</span></p>
+        </div>
+
+        <div class="game-period">
+            <p>GAME PERIOD: <span id="game-period">Loading...</span></p>
+        </div>
+
+        <div class="result-container" id="result-box">
+            <p>RESULT: <span id="result-text"></span></p>
+        </div>
+
+        <button class="get-result-btn" onclick="generateResult()">GET RESULT</button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">Toast Message</div>
+
+    <script>
+        let currentPeriod = null;
+        let lastGeneratedPeriod = null;
+        let lastResult = null;
+
+        // Function to generate period numbers based on UTC
+        function generatePeriod() {
+            const now = new Date();
+            const year = now.getUTCFullYear();
+            const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            const totalMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+            currentPeriod = (parseInt(`${year}${month}${day}`) * 100000) + 10001 + totalMinutes;
+            document.getElementById("game-period").innerText = currentPeriod;
+
+            // Reset result when period changes
+            if (currentPeriod !== lastGeneratedPeriod) {
+                lastResult = null;
+                document.getElementById("result-box").style.display = "none";
+            }
+        }
+
+        // Function to show toast notification
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        // Function to generate a random result (Only once per period)
+        function generateResult() {
+            if (currentPeriod === lastGeneratedPeriod) {
+                showToast("⏳ Wait for next period!");
+                return;
+            }
+
+            const possibleResults = ["GREEN 3","RED 8","GREEN 9","RED 0","RED 2","GREEN 7","GREEN 5"];
+            lastResult = possibleResults[Math.floor(Math.random() * possibleResults.length)];
+            document.getElementById("result-text").innerText = lastResult;
+            document.getElementById("result-box").style.display = "block";
+
+            lastGeneratedPeriod = currentPeriod;
+            showToast("✅ New result generated!");
+        }
+
+        
+        function openTelegram() {
+        }
+
+        // Update game period every minute
+        setInterval(generatePeriod, 60000);
+        generatePeriod();  // Initial call
+
+    </script>
+
+</body>
+</html>
