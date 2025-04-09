@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VP BHAI PRIDICTOR</title>
+    <!-- TensorFlow JS (for AI) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <!-- FontAwesome Icons & Tailwind CSS -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter for Normal Font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Normal Font and Modern Design */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            color: #ffffff;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 20px auto;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.8s ease-in-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 24px;
+            text-align: center;
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; }
+            50% { text-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        }
+
+        .box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ff00ff);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #00ff00, #ff00ff);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .history-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            animation: slideUp 0.5s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .mark {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff00ff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .mark.green {
+            background: #00ff00;
+        }
+
+        #history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Robot Icon and Message */
+        .robot-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .robot-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .robot-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .robot-message {
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            max-width: 200px;
+            text-align: center;
+            animation: fadeInMessage 0.5s ease-in-out;
+        }
+
+        @keyframes fadeInMessage {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Robot Icon and Message -->
+    <div class="robot-container">
+        <div id="robot-message" class="robot-message" style="display: none;"></div>
+        <div class="robot-icon" id="robot-icon">
+            🤖
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Heading -->
+        <h1 class="heading">
+            VP  <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-purple-400">BHAI </span>
+        </h1>
+
+        <!-- Period & Result Box -->
+        <div class="box text-center">
+            <p class="text-lg font-semibold text-gray-300">
+                <i class="fas fa-calendar-alt"></i> Period: <span id="period-number" class="text-white">Loading...</span>
+            </p>
+            <p class="text-lg font-semibold text-gray-300 mt-2">
+                <i class="fas fa-chart-line"></i> Result: <span id="predicted-result" class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-purple-400 font-bold">Loading...</span>
+            </p>
+            <div class="progress-bar mt-2">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Analysis Section -->
+        <div class="box mt-6">
+            <h2 class="text-lg font-semibold text-gray-300 text-center">Analysis</h2>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="bg-gray-800 p-4 rounded-lg text-center history-box">
+                    <p class="text-gray-300">WIN Count</p>
+                    <p id="won-count" class="text-xl font-bold text-green-400">0</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center history-box">
+                    <p class="text-gray-300">Lost Count</p>
+                    <p id="lost-count" class="text-xl font-bold text-red-400">0</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center history-box">
+                    <p class="text-gray-300">WIN %</p>
+                    <p id="won-percentage" class="text-xl font-bold text-green-400">0%</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg text-center history-box">
+                    <p class="text-gray-300">Auto-Reverse</p>
+                    <p class="text-xl font-bold text-gray-400">Inactive</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="box mt-6">
+            <h2 class="text-lg font-semibold text-gray-300 text-center">History</h2>
+            <div id="history-list" class="grid grid-cols-1 gap-3 mt-3"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript Code -->
+    <script>
+        let previousResults = [];
+        let latestResult = null;
+        let latestPeriod = null;
+        let history = [];
+
+        // Robot Message Function
+        function showRobotMessage(message, isWin) {
+            const robotMessage = document.getElementById('robot-message');
+            const robotIcon = document.getElementById('robot-icon');
+
+            // Update message and icon
+            robotMessage.textContent = message;
+            robotMessage.style.display = 'block';
+            robotIcon.textContent = isWin ? '👑' : '😢'; // Smile for win, sad for loss
+
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                robotMessage.style.display = 'none';
+                robotIcon.textContent = '🤖'; // Reset to default robot icon
+            }, 5000);
+        }
+
+        // Fetch Current Game Issue
+        async function fetchCurrentGameIssue() {
+            const apiUrl = 'https://api.bdg88zf.com/api/webapi/GetGameIssue';
+            const requestData = {
+                typeId: 1,
+                language: 0,
+                random: "40079dcba93a48769c6ee9d4d4fae23f",
+                signature: "D12108C4F57C549D82B23A91E0FA20AE",
+                timestamp: 1727792520,
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.code === 0) {
+                        const currentPeriod = data.data.issueNumber;
+                        if (currentPeriod !== latestPeriod) {
+                            latestPeriod = currentPeriod;
+                            document.getElementById('period-number').textContent = latestPeriod.toString().slice(-17);
+                            fetchPreviousResults();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Fetch error:", error);
+            }
+        }
+
+        // Fetch Previous Results
+        async function fetchPreviousResults() {
+            const apiUrl = 'https://api.bdg88zf.com/api/webapi/GetNoaverageEmerdList';
+            const requestData = {
+                pageSize: 10,
+                pageNo: 1,
+                typeId: 1,
+                language: 0,
+                random: "c2505d9138da4e3780b2c2b34f2fb789",
+                signature: "7D637E060DA35C0C6E28DC6D23D71BED",
+                timestamp: 1727792520,
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.code === 0 && data.data.list.length > 0) {
+                        previousResults = data.data.list;
+                        updateResults();
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Fetch error:", error);
+            }
+        }
+
+        // Update Results with New Prediction Logic
+        function updateResults() {
+            if (previousResults.length > 0) {
+                const results = previousResults.map(entry => ({ number: parseInt(entry.number) }));
+
+                // Count BIG, SMALL, GREEN, RED
+                let bigCount = 0, smallCount = 0, greenCount = 0, redCount = 0;
+                results.forEach(entry => {
+                    const num = entry.number;
+                    if (num >= 0 && num <= 4) smallCount++;
+                    else if (num >= 5 && num <= 9) bigCount++;
+
+                    if ([1, 3, 5, 7, 9].includes(num)) greenCount++;
+                    else if ([0, 2, 4, 6, 8].includes(num)) redCount++;
+                });
+
+                // Analyze last 10 results for streaks
+                const recentNumbers = results.slice(0, 10);
+                const lastTenBigSmall = recentNumbers.map(entry => (entry.number >= 0 && entry.number <= 4) ? 'SMALL' : 'BIGGG');
+                const lastTenColors = recentNumbers.map(entry => ([1, 3, 5, 7, 9].includes(entry.number)) ? 'GREEN' : 'REDDD');
+
+                // Calculate streaks
+                let bigStreak = 0, smallStreak = 0, greenStreak = 0, redStreak = 0;
+                let currentBigSmallStreak = null, currentColorStreak = null;
+
+                lastTenBigSmall.forEach(bs => {
+                    if (bs === currentBigSmallStreak) {
+                        if (bs === 'BIGGG') bigStreak++;
+                        else smallStreak++;
+                    } else {
+                        currentBigSmallStreak = bs;
+                        bigStreak = (bs === 'BIGGG') ? 1 : 0;
+                        smallStreak = (bs === 'SMALL') ? 1 : 0;
+                    }
+                });
+
+                lastTenColors.forEach(color => {
+                    if (color === currentColorStreak) {
+                        if (color === 'GREEN') greenStreak++;
+                        else redStreak++;
+                    } else {
+                        currentColorStreak = color;
+                        greenStreak = (color === 'GREEN') ? 1 : 0;
+                        redStreak = (color === 'REDDD') ? 1 : 0;
+                    }
+                });
+
+                // Generate predictions
+                const bigSmallPrediction = (bigStreak >= 3) ? 'SMALL' : (smallStreak >= 3) ? 'BIGGG' :
+                    (recentNumbers.filter(entry => entry.number >= 5).length >= 6) ? 'SMALL' : 'BIGGG';
+
+                const colorPrediction = (greenStreak >= 3) ? 'REDDD' : (redStreak >= 3) ? 'GREEN' :
+                    (greenCount > 60 && redStreak < 2) ? 'REDDD' : 'GREEN';
+
+                // Update UI with predictions
+                latestResult = `${bigSmallPrediction} | ${colorPrediction}`;
+                document.getElementById('predicted-result').textContent = latestResult;
+                updateHistory();
+            }
+        }
+
+        // Update History
+        function updateHistory() {
+            const historyContainer = document.getElementById('history-list');
+            historyContainer.innerHTML = '';
+
+            const newHistoryEntry = {
+                period: latestPeriod.toString().slice(-17),
+                prediction: latestResult,
+                status: "PENDING"
+            };
+
+            // Add new entry to history
+            history.unshift(newHistoryEntry);
+
+            // Update previous entry status
+            if (history.length > 1) {
+                const prevEntry = history[1];
+                const actualResult = previousResults[0].number <= 4 ? 'SMALL' : 'BIGGG';
+                const actualColor = [1, 3, 5, 7, 9].includes(previousResults[0].number) ? 'GREEN' : 'REDDD';
+
+                const bigWin = prevEntry.prediction.includes(actualResult);
+                const colorWin = prevEntry.prediction.includes(actualColor);
+
+                prevEntry.status = (bigWin || colorWin) ? "WON" : "LOST";
+
+                // Show robot message for win/loss
+                if (prevEntry.status === "WON") {
+                    if (bigWin) {
+                        showRobotMessage(`🎉 BIG Won!`, true);
+                    } else if (colorWin) {
+                        showRobotMessage(`🎉 GREEN Won!`, true);
+                    }
+                } else if (prevEntry.status === "LOST") {
+                    showRobotMessage(`😢 Loss!`, false);
+                }
+            }
+
+            // Keep only the last 1000000 entries
+            if (history.length > 1000000) {
+                history = history.slice(0, 1000000);
+            }
+
+            // Display history
+            let winCount = 0,
+                lossCount = 0;
+            history.forEach((entry) => {
+                const box = document.createElement('div');
+                box.className = "history-box bg-gray-800 p-4 rounded-lg text-center relative";
+
+                box.innerHTML = `
+                    <p class="text-gray-300">Period: <span class="font-bold text-white">${entry.period}</span></p>
+                    <p class="text-gray-300">Prediction: <span class="font-bold text-white">${entry.prediction}</span></p>
+                    <p class="${entry.status === 'WON' ? 'text-green-400' : entry.status === 'LOST' ? 'text-red-400' : 'text-yellow-400'} font-bold">
+                        ${entry.status}
+                    </p>
+                `;
+
+                historyContainer.appendChild(box);
+
+                if (entry.status === "WON") winCount++;
+                else if (entry.status === "LOST") lossCount++;
+            });
+
+            // Update analysis section
+            document.getElementById('won-count').textContent = winCount;
+            document.getElementById('lost-count').textContent = lossCount;
+            const winPercentage = (winCount + lossCount > 0) ? ((winCount / (winCount + lossCount)) * 100).toFixed(2) : 0;
+            document.getElementById('won-percentage').textContent = `${winPercentage}%`;
+            document.getElementById('progress-bar-fill').style.width = `${winPercentage}%`;
+        }
+
+        // Auto-Fetch Every 5 Seconds
+        setInterval(fetchCurrentGameIssue, 5000);
+        fetchCurrentGameIssue(); // Initial fetch
+    </script>
+</body>
+
+</html>
