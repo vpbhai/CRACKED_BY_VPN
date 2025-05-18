@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VPN AI WEB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=El+Messiri&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"> <!-- Font Awesome CDN for the trophy and cross icon -->
+  <style>
+    body {
+      font-family: 'El Messiri', sans-serif;
+    }
+    .WIN { color: lime; }
+    .LOSS { color: red; }
+    .pending { color: yellow; }
+
+    .rotate {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+    
+@keyframes shrink {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.8); }
+}
+
+.shrink {
+  animation: shrink 2s ease-in-out infinite;
+}
+
+    /* Lockout overlay */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 1.5rem;
+      z-index: 1000;
+    }
+
+    .overlay-content {
+      text-align: center;
+      padding: 20px;
+      background-color: #2b2b2b;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-cyan-100 text-black">
+
+  <div class="text-center mt-4">
+    <h1 class="text-cyan-500 text-2xl font-bold">
+      VPN AI WEB
+    </h1>
+    <p class="text-cyan-400">OWNER YADAV BHAI : @SURESHOT_BY_VPN</p>
+  </div>
+
+  <div class="max-w-md mx-auto mt-4 p-4 bg-white rounded-lg">
+    <div class="mb-4">
+      <select id="serverSelect" class="w-full p-2 bg-cyan-100 text-black border border-black rounded">
+        <option>SELECT SERVER</option>
+        <option value="api">VPN API BASED</option>
+        <option value="calc">VPN AI CALCULATION</option>
+      </select>
+    </div>
+
+    <div class="p-4 bg-cyan-100 rounded-lg border border-black mb-4">
+      <div class="flex items-center mb-2">
+        <span class="text-black font-bold">PERIOD</span>
+      </div>
+      <p class="text-black text-lg" id="currentPeriod">-</p>
+
+      <div class="flex items-center mb-2 mt-2">
+        <span class="text-black font-bold">TIME LEFT</span>
+      </div>
+      <p class="text-black text-lg" id="countdown">--</p>
+
+      <div class="flex items-center mb-2 mt-2">
+        <span class="text-black font-bold">PREDICTION</span>
+      </div>
+      <p class="text-black text-lg" id="prediction">WAITING...</p>
+    </div>
+
+    <div class="text-center text-cyan-500 font-bold mb-4">ANALYSIS DASHBOARD</div>
+    <div class="grid grid-cols-2 gap-4 text-center">
+      <div class="p-4 bg-cyan-100 rounded-lg">
+        <p>WIN RATE</p>
+        <p id="accuracy">0%</p>
+      </div>
+      <div class="p-4 bg-cyan-100 rounded-lg">
+        <p>WINS</p>
+        <p id="totalWins">0</p>
+      </div>
+      <div class="p-4 bg-cyan-100 rounded-lg">
+        <p>LOSSES</p>
+        <p id="totalLosses">0</p>
+      </div>
+      <div class="p-4 bg-cyan-100 rounded-lg">
+        <p>SERVER STATUS</p>
+        <p class="text-black">CONNECTED</p>
+      </div>
+    </div>
+
+    <div class="mt-6 text-black">
+      <div class="flex items-center justify-between px-2">
+        <h2 class="text-center font-bold mb-2">HISTORY</h2>
+        <button onclick="clearHistory()" class="flex items-center bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded shadow">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          CLEAR HISTORY
+        </button>
+      </div>
+      <div id="history" class="mt-2"></div>
+    </div>
+  </div>
+
+  <div class="text-center mt-6">
+    <button onclick="history.back()" class="flex items-center justify-center mx-auto bg-black hover:bg-black text-white font-semibold px-5 py-2 rounded-full shadow-lg transition duration-200">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      Back
+    </button>
+  </div>
+
+  <script>
+    const serverSelect = document.getElementById("serverSelect");
+
+    window.addEventListener('load', () => {
+      const savedServer = localStorage.getItem("selectedServer");
+      if (savedServer) {
+        serverSelect.value = savedServer;
+      }
+      checkLockout();
+    });
+
+    serverSelect.addEventListener("change", () => {
+      const selectedServer = serverSelect.value;
+      localStorage.setItem("selectedServer", selectedServer);
+      location.reload();
+    });
+
+    let historyData = [];
+    let totalWins = 0;
+    let totalLosses = 0;
+    let correctPredictions = 0;
+    let lastFetchedPeriod = null;
+    let blockPredictions = false;
+
+    function getRealSecondsLeft() {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      return 60 - seconds;
+    }
+
+    async function fetchGameResult() {
+      try {
+        const payload = {
+          pageSize: 10,
+          pageNo: 1,
+          typeId: 1,
+          language: 0,
+          random: "4a0522c6ecd8410496260e686be2a57c",
+          signature: "334B5E70A0C9B8918B0B15E517E2069C",
+          timestamp: Math.floor(Date.now() / 1000)
+        };
+
+        const response = await fetch("https://api.bdg88zf.com/api/webapi/GetNoaverageEmerdList", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const result = data?.data?.list?.[0];
+        if (result) {
+          return { period: result.issueNumber, result: result.number };
+        }
+        return null;
+      } catch (err) {
+        console.error("Fetch error:", err);
+        return null;
+      }
+    }
+
+    function trendAnalysis(history) {
+  const alpha = 0.2;  // Smoothing factor
+  let ema = history[0]?.result || 0;  // Start with the first result
+  
+  for (let i = 1; i < history.length; i++) {
+    ema = alpha * history[i].result + (1 - alpha) * ema;
+  }
+
+  return ema >= 5 ? "BIG" : "SMALL";
+}
+
+    
+    function startLockout(minutes = 30) {
+      const unlockTime = Date.now() + minutes * 60 * 1000;
+      localStorage.setItem("lockoutUntil", unlockTime);
+      blockPredictions = true;
+      showLockoutOverlay(unlockTime);
+    }
+
+    function showLockoutOverlay(unlockTime) {
+      const overlay = document.createElement("div");
+      overlay.classList.add("overlay");
+      overlay.innerHTML = `
+        <div class="overlay-content">
+          <h2>You are locked out!</h2>
+          <p>You've reached 10 wins or 3 consecutive losses. Please try again after 30 minutes.</p>
+          <p>Unlocks at: ${new Date(unlockTime).toLocaleTimeString()}</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function checkLockout() {
+      const lockoutUntil = parseInt(localStorage.getItem("lockoutUntil"), 10);
+      if (!isNaN(lockoutUntil) && Date.now() < lockoutUntil) {
+        blockPredictions = true;
+        showLockoutOverlay(lockoutUntil);
+      } else {
+        localStorage.removeItem("lockoutUntil");
+        blockPredictions = false;
+      }
+    }
+
+    async function updatePrediction() {
+      if (blockPredictions) return;
+
+      const apiResult = await fetchGameResult();
+      if (!apiResult || apiResult.period === lastFetchedPeriod) return;
+
+      lastFetchedPeriod = apiResult.period;
+      const currentPeriod = (BigInt(apiResult.period) + 1n).toString();
+      const prediction = trendAnalysis(historyData);
+
+      document.getElementById("currentPeriod").innerText = currentPeriod;
+      document.getElementById("prediction").innerText = prediction;
+
+      historyData.unshift({
+        period: currentPeriod,
+        result: apiResult.result,
+        prediction: prediction,
+        resultStatus: "Pending"
+      });
+
+      checkWinLoss(apiResult);
+      updateStats();
+      updateHistory();
+    }
+
+    function checkWinLoss(apiResult) {
+      historyData.forEach(item => {
+        if (item.period === apiResult.period) {
+          const actual = apiResult.result >= 5 ? "BIG" : "SMALL";
+          item.resultStatus = item.prediction === actual ? "WIN" : "LOSS"; 
+        }
+      });
+
+      const last10Wins = historyData.filter(i => i.resultStatus === "WIN").length;
+      const last3 = historyData.slice(0, 3);
+      const consecutiveLosses = last3.length === 3 && last3.every(i => i.resultStatus === "LOSS");
+
+      if (last10Wins >= 10) {
+        startLockout();
+      } else if (consecutiveLosses) {
+        startLockout();
+      }
+    }
+
+    function updateStats() {
+      totalWins = historyData.filter(i => i.resultStatus === "WIN").length;
+      totalLosses = historyData.filter(i => i.resultStatus === "LOSS").length;
+      correctPredictions = totalWins;
+
+      const total = historyData.length;
+      const accuracy = total ? ((correctPredictions / total) * 100).toFixed(2) : "0.00";
+      document.getElementById("totalWins").innerText = totalWins;
+      document.getElementById("totalLosses").innerText = totalLosses;
+      document.getElementById("accuracy").innerText = `${accuracy}%`;
+    }
+
+    function updateHistory() {
+      const historyDiv = document.getElementById("history");
+      historyDiv.innerHTML = ""; 
+
+      historyData.forEach(item => {
+        const status = item.resultStatus;
+        const styleClass = status === "WIN"
+          ? "border-green-500 text-green-400"
+          : status === "LOSS"
+          ? "border-red-500 text-red-400"
+          : "border-yellow-500 text-yellow-400"; 
+
+        historyDiv.innerHTML += `
+          <div class="border-l-4 ${styleClass} bg-gray-900 rounded-md p-3 mb-3 shadow">
+            <div class="flex justify-between items-center">
+              <span class="font-bold">PERIOD :</span>
+              <span>${item.period}</span>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+              <span class="font-bold">PREDICTION :</span>
+              <span>${item.prediction}</span>
+            </div>
+            <div class="mt-2 flex justify-center">
+  <div class="w-10 h-10 rounded-full flex items-center justify-center text-white
+    ${
+      status === "WIN"
+        ? 'bg-green-500 pulse-grow'
+        : status === "LOSS"
+          ? 'bg-red-500 pulse-grow'
+          : 'bg-yellow-400 rotate'
+    }">
+    ${
+      status === "WIN"
+        ? `<i class="fas fa-trophy text-lg shrink"></i>`
+        : status === "LOSS"
+          ? `<i class="fas fa-times text-lg shrink"></i>`
+          : `<i class="fas fa-hourglass-half text-lg"></i>`
+    }
+  </div>
+</div>
+
+
+        `;
+      });
+    }
+
+    function clearHistory() {
+      historyData = [];
+      totalWins = 0;
+      totalLosses = 0;
+      correctPredictions = 0;
+      blockPredictions = false;
+      updateStats();
+      updateHistory();
+    }
+
+    setInterval(() => {
+      const secondsLeft = getRealSecondsLeft();
+      document.getElementById("countdown").innerText = secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft;
+      if (secondsLeft === 60 || secondsLeft === 59) {
+        updatePrediction();
+      }
+    }, 1000);
+
+    updatePrediction();
+  </script>
+</body>
+</html>
